@@ -16,10 +16,10 @@ DB_CONFIG = {
 
 # ── INITIALIZE DB PASSWORD (only prompts once) ──
 def init_db():
+    # Prefer environment variable; do not prompt on the console so GUI builds
+    # and windowed executables won't hang waiting for stdin.
     if DB_CONFIG["password"] is None:
         DB_CONFIG["password"] = os.getenv("SPA_DB_PASSWORD")
-    if DB_CONFIG["password"] is None:
-        DB_CONFIG["password"] = getpass.getpass("Enter MySQL root password: ")
 
 
 def set_db_password(password: str) -> None:
@@ -143,3 +143,31 @@ def ensure_db_setup(sql_path: str | None = None) -> None:
         conn.close()
     except Exception as e:
         raise RuntimeError(f"Failed to ensure DB setup: {e}") from e
+
+
+def db_exists(password: str | None = None, timeout: int = 5) -> bool:
+    """Return True if the configured database exists and is accessible.
+
+    Tries to connect using the provided `password` (or `SPA_DB_PASSWORD`/empty
+    string). If the connection succeeds the database exists. If the server
+    is reachable but the database is missing, returns False. On access denied
+    or other connection errors returns False.
+    """
+    cfg = DB_CONFIG.copy()
+    if password is not None:
+        cfg["password"] = password
+    else:
+        cfg["password"] = os.getenv("SPA_DB_PASSWORD", "")
+
+    try:
+        # Short timeout to avoid long waits
+        conn = mysql.connector.connect(**cfg, connection_timeout=timeout)
+        conn.close()
+        return True
+    except mysql.connector.Error as e:
+        # Unknown database error (1049) indicates server reachable but DB missing
+        if getattr(e, 'errno', None) == 1049:
+            return False
+        return False
+    except Exception:
+        return False

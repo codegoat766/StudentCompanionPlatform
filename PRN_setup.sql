@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 INSERT INTO users(username, password_hash, role)
 VALUES
-('admin', SHA2('admin', 256), 'admin'),
+('admin', SHA2('adminpass', 256), 'admin'),
 ('faculty1', SHA2('faculty1', 256), 'faculty'),
 ('stud1', SHA2('stud1', 256), 'student'),
 ('stud2', SHA2('stud2', 256), 'student')

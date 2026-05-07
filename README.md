@@ -143,6 +143,14 @@ Student:
 - `__pycache__` folders are generated automatically by Python and are ignored.
 - `PRN_spa.exe` may require MySQL client libraries on another Windows machine.
 
+## Default Accounts
+
+- The setup script creates a default admin account for initial access:
+	- **username:** `admin`
+	- **password:** `adminpass`
+
+	Use this admin account to create subjects, create additional users (faculty/student), and configure the system. Change the admin password after first login using the mysql client command line.
+
 ### Executable DB setup behavior
 
 - When you run the windowed executable `PRN_spa.exe`, the application will prompt with a GUI password dialog to obtain the MySQL root password and then run `PRN_setup.sql` to create the database and tables if needed.
