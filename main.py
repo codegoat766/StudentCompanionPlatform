@@ -1,6 +1,6 @@
 import sys
 import os
-
+import PyQt6
 from PyQt6.QtWidgets import QApplication, QInputDialog, QLineEdit, QMessageBox
 
 from app_paths import resource_path
