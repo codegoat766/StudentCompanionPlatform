@@ -1,9 +1,13 @@
 from PyQt6 import uic
-from PyQt6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem
+from PyQt6.QtWidgets import (
+    QFileDialog, QFrame, QHBoxLayout, QMainWindow, QMessageBox,
+    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+)
 
 from academic import AcademicService
 from app_paths import resource_path
 from std import StudentService
+from custom_charts import BarChart, DonutChart
 
 
 class StudentController(QMainWindow):
@@ -16,13 +20,49 @@ class StudentController(QMainWindow):
         self.average_marks = 0.0
         self.gpa = 0.0
         self.grade = "F"
-        self.usernameLabel.setText(f"USERNAME: {user['username']}")
-        self.roleLabel.setText("ROLE: STUDENT")
+        self.usernameLabel.setText(f"Username: {user['username']}")
+        self.roleLabel.setText("Role: Student")
         self.statusLabel.setWordWrap(True)
-        self.analyticsTable = QTableWidget()
-        self.tabs.addTab(self.analyticsTable, "ANALYTICS")
-        self.leaderboardTable = QTableWidget()
-        self.tabs.addTab(self.leaderboardTable, "LEADERBOARD")
+        self.statusLabel.setMinimumHeight(80)
+        self.gpaLabel.setWordWrap(True)
+        self.gpaLabel.setMinimumHeight(80)
+        self.statusLabel.setMinimumHeight(100)
+
+        # Inject BarChart into performanceLayout above the table
+        self.barChart = BarChart()
+        self.performanceLayout.insertWidget(0, self.barChart)
+
+        # Setup navigation buttons
+        self.btnPerformance.clicked.connect(lambda: self.contentStack.setCurrentIndex(0))
+        self.btnAnalytics.clicked.connect(lambda: self.contentStack.setCurrentIndex(1))
+        self.btnLeaderboard.clicked.connect(lambda: self.contentStack.setCurrentIndex(2))
+
+        # Setup Donut Chart inside analytics tab
+        # The analyticsTab already has a QVBoxLayout with analyticsTable
+        # We restructure it: remove the table, create HBox with table + donut
+        self.donutChart = DonutChart()
+        self.donutChart.setMaximumSize(180, 180)
+        self.donutChart.setMinimumSize(120, 120)
+        self.donutChart.center_text = "Students"
+
+        # Remove analyticsTable from its existing layout
+        self.analyticsLayout.removeWidget(self.analyticsTable)
+
+        # Create horizontal wrapper
+        analytics_wrapper = QWidget()
+        h_layout = QHBoxLayout(analytics_wrapper)
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.addWidget(self.analyticsTable, 5)
+
+        chart_container = QFrame()
+        chart_container.setObjectName("rightPanel")
+        chart_container.setMaximumWidth(200)
+        chart_v = QVBoxLayout(chart_container)
+        chart_v.addWidget(self.donutChart)
+        h_layout.addWidget(chart_container, 1)
+
+        self.analyticsLayout.addWidget(analytics_wrapper)
+
         self.refreshButton.clicked.connect(self.refresh)
         self.exportButton.clicked.connect(self.export_csv)
         self.logoutButton.clicked.connect(self.logout)
@@ -45,19 +85,28 @@ class StudentController(QMainWindow):
                 self.gpa = float(gpa)
                 self.grade = grade
                 self.statusLabel.setText(
-                    f"STATUS: ONLINE\nNAME: {name}\nDEPARTMENT: {department}\nPRN: {prn}\nSUBJECTS MARKED: {subject_count}"
+                    f"Name: {name}\nDepartment: {department}\nPRN: {prn}\nSubjects Marked: {subject_count}"
                 )
-            self.gpaLabel.setText(f"GPA (MAX 10): {self.gpa} | AVG: {self.average_marks} | GRADE: {self.grade}")
+            self.gpaLabel.setText(f"GPA: {self.gpa}\nAvg: {self.average_marks}\nGrade: {self.grade}")
             self.marksTable.setColumnCount(4)
             self.marksTable.setHorizontalHeaderLabels(["Subject", "Marks", "Grade", "Result"])
             self.marksTable.setRowCount(len(self.rows))
+            chart_data = []
             for row_index, row in enumerate(self.rows):
+                subject = row[0]
+                marks_val = row[1]
+                if marks_val != 'Not Entered':
+                    try:
+                        chart_data.append((subject, float(marks_val)))
+                    except (ValueError, TypeError):
+                        pass
                 for col, value in enumerate(row):
                     self.marksTable.setItem(row_index, col, QTableWidgetItem(str(value)))
             self.marksTable.resizeColumnsToContents()
+            self.barChart.set_data(chart_data)
             self.load_analytics()
             self.load_leaderboard()
-            self.log("STUDENT PERFORMANCE FEED REFRESHED")
+            self.log("Student performance refreshed.")
         except Exception as exc:
             QMessageBox.critical(self, "Refresh Failed", str(exc))
 
@@ -76,6 +125,16 @@ class StudentController(QMainWindow):
             ["Report", "Field 1", "Field 2", "Field 3", "Field 4", "Field 5", "Field 6"],
             AcademicService.analytics_dashboard_rows(),
         )
+        # Load chart data for donut chart - display distribution of letter grades for the WHOLE CLASS
+        # Data format expected by DonutChart: [A_count, B_count, C_count, D_count, F_count]
+        # grade_distribution returns: [('A (>= 90)', count), ('B (75-89)', count), ...]
+        distribution = AcademicService.grade_distribution()
+        donut_data = [count for _, count in distribution]
+        
+        if sum(donut_data) > 0:
+            self.donutChart.set_data(donut_data)
+        else:
+            self.donutChart.set_data([0, 0, 0, 0, 0])
 
     def load_leaderboard(self) -> None:
         self.load_table(

@@ -26,29 +26,46 @@ class FacultyController(QMainWindow):
         self.user = user
         self.on_logout = on_logout
         self.current_student = None
-        self.usernameLabel.setText(f"USERNAME: {user['username']}")
-        self.roleLabel.setText("ROLE: FACULTY")
+        self.usernameLabel.setText(f"Username: {user['username']}")
+        self.navSidebar.setCurrentIndex(0)
+        self.navSidebar.currentIndexChanged.connect(self.on_nav_changed)
         self.setup_feature_tabs()
         self.searchButton.clicked.connect(self.search_student)
         self.saveMarkButton.clicked.connect(self.save_mark)
-        self.bulkUpdateButton.clicked.connect(self.bulk_update_marks)
+        self.bulkSaveButton.clicked.connect(self.bulk_update_marks)
         self.refreshButton.clicked.connect(self.refresh_subjects)
         self.logoutButton.clicked.connect(self.logout)
-        self.prnInput.returnPressed.connect(self.search_student)
-        self.subjectCombo.currentTextChanged.connect(self.load_subject_roster)
+        self.subjectList.itemClicked.connect(lambda item: self.load_subject_roster(item.text()))
+        self.subjectList.itemClicked.connect(lambda _: self.contentStack.setCurrentWidget(self.rosterTab))
         self.refresh_subjects()
 
+    def on_nav_changed(self, index: int) -> None:
+        if index == 5:
+            self.contentStack.setCurrentIndex(6)  # Subjects tab is at index 6
+        else:
+            self.contentStack.setCurrentIndex(index)
+
     def setup_feature_tabs(self) -> None:
+        self.navSidebar.clear()
+        self.navSidebar.addItem("Dashboard")
+        self.navSidebar.addItem("Students")
+        self.navSidebar.addItem("Analytics")
+        self.navSidebar.addItem("Leaderboard")
+        self.navSidebar.addItem("Student Marks")
+        self.navSidebar.addItem("Subjects")
+        
         self.dashboardTable = QTableWidget()
-        self.tabs.insertTab(0, self.dashboardTable, "DASHBOARD")
+        self.contentStack.insertWidget(0, self.dashboardTable)
 
         self.studentsTab = QWidget()
         students_layout = QHBoxLayout(self.studentsTab)
         self.departmentInput = QLineEdit()
-        self.departmentInput.setPlaceholderText("DEPARTMENT FILTER")
-        self.searchDepartmentButton = QPushButton("SEARCH")
-        self.addBonusButton = QPushButton("ADD BONUS")
-        self.exportHighButton = QPushButton("EXPORT HIGH CSV")
+        self.departmentInput.setPlaceholderText("Department filter...")
+        self.searchDepartmentButton = QPushButton("Search")
+        self.addBonusButton = QPushButton("Add Bonus")
+        self.addBonusButton.setObjectName("secondary_btn")
+        self.exportHighButton = QPushButton("Export High CSV")
+        self.exportHighButton.setObjectName("secondary_btn")
         self.studentsTable = QTableWidget()
         action_bar = QWidget()
         action_layout = QVBoxLayout(action_bar)
@@ -62,12 +79,15 @@ class FacultyController(QMainWindow):
         action_layout.addStretch()
         students_layout.addWidget(self.studentsTable, 5)
         students_layout.addWidget(action_bar, 2)
-        self.tabs.addTab(self.studentsTab, "STUDENTS")
-
+        self.contentStack.insertWidget(1, self.studentsTab)
+        
         self.analyticsTable = QTableWidget()
-        self.tabs.addTab(self.analyticsTable, "ANALYTICS")
+        self.contentStack.insertWidget(2, self.analyticsTable)
+        
         self.leaderboardTable = QTableWidget()
-        self.tabs.addTab(self.leaderboardTable, "LEADERBOARD")
+        self.contentStack.insertWidget(3, self.leaderboardTable)
+        
+        self.navSidebar.setCurrentIndex(0)
 
         self.searchDepartmentButton.clicked.connect(self.load_students)
         self.departmentInput.returnPressed.connect(self.load_students)
@@ -76,34 +96,32 @@ class FacultyController(QMainWindow):
 
     def refresh_subjects(self) -> None:
         try:
-            self.subjectsList.clear()
+            self.subjectList.clear()
             subjects = FacultyService.assigned_subjects(self.user["id"])
-            self.subjectsList.addItems(subjects)
+            self.subjectList.addItems(subjects)
             self.subjectCombo.clear()
             self.subjectCombo.addItems(subjects)
             self.load_dashboard()
             self.load_students()
             self.load_analytics()
             self.load_leaderboard()
-            if subjects:
-                self.tabs.setCurrentWidget(self.rosterTab)
-                self.load_subject_roster(subjects[0])
-            self.log("SUBJECT RESTRICTIONS LOADED")
+            self.navSidebar.setCurrentIndex(0)
+            self.log("Subject restrictions loaded.")
         except Exception as exc:
             QMessageBox.critical(self, "Subject Load Failed", str(exc))
 
     def log(self, message: str) -> None:
-        self.terminalOutput.append(f"> {message}")
+        print(f"Faculty Log: {message}")
 
     def search_student(self) -> None:
-        prn = self.prnInput.text().strip()
+        prn = self.searchPrnInput.text().strip()
         if not prn:
             return
         try:
             student = FacultyService.find_student_by_prn(prn)
             if not student:
                 self.current_student = None
-                self.studentInfoLabel.setText("NO STUDENT LOCKED")
+                self.studentInfoLabel.setText("No student selected")
                 self.marksTable.setRowCount(0)
                 self.log(f"NO STUDENT FOUND FOR PRN {prn}")
                 return
@@ -169,36 +187,36 @@ class FacultyController(QMainWindow):
             FacultyService.upsert_mark(self.user, self.current_student[0], subject, marks)
             self.log(f"MARK SAVED: {self.current_student[1]} | {subject} -> {marks}")
             self.load_marks(self.current_student[0])
-            self.load_subject_roster(subject)
             self.marksInput.clear()
         except Exception as exc:
             QMessageBox.critical(self, "Save Failed", str(exc))
 
     def load_subject_roster(self, subject: str) -> None:
         if not subject:
-            self.subjectRosterTable.setRowCount(0)
+            self.rosterTable.setRowCount(0)
             return
 
         try:
+            from PyQt6.QtWidgets import QTableWidgetItem, QMessageBox
+            from PyQt6.QtCore import Qt
             rows = FacultyService.subject_roster(self.user["id"], subject)
-            self.subjectRosterTable.setColumnCount(4)
-            self.subjectRosterTable.setHorizontalHeaderLabels(["ID", "Student", "PRN", "Marks"])
-            self.subjectRosterTable.setRowCount(len(rows))
-            self.subjectRosterTable.setColumnHidden(0, True)
-            self.subjectRosterTable.setSortingEnabled(False)
-
+            self.rosterTable.setColumnCount(4)
+            self.rosterTable.setHorizontalHeaderLabels(["Subject", "Student", "PRN", "Marks"])
+            self.rosterTable.setRowCount(len(rows))
+            self.rosterTable.setColumnHidden(0, True)
+            self.rosterTable.setSortingEnabled(False)
+            # Populate rosterTable rows
             for row_index, (student_id, name, prn, marks) in enumerate(rows):
                 values = [student_id, name, prn, "" if marks is None else marks]
                 for col, value in enumerate(values):
                     item = QTableWidgetItem(str(value))
                     if col in {0, 1, 2}:
                         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                    self.subjectRosterTable.setItem(row_index, col, item)
-
-            self.subjectRosterTable.resizeColumnsToContents()
-            self.tabs.setCurrentWidget(self.rosterTab)
+                    self.rosterTable.setItem(row_index, col, item)
+            self.rosterTable.resizeColumnsToContents()
             self.log(f"ROSTER LOADED FOR SUBJECT: {subject}")
         except Exception as exc:
+            from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Roster Load Failed", str(exc))
 
     def bulk_update_marks(self) -> None:
@@ -209,9 +227,9 @@ class FacultyController(QMainWindow):
 
         updates = []
         try:
-            for row in range(self.subjectRosterTable.rowCount()):
-                id_item = self.subjectRosterTable.item(row, 0)
-                marks_item = self.subjectRosterTable.item(row, 3)
+            for row in range(self.rosterTable.rowCount()):
+                id_item = self.rosterTable.item(row, 0)
+                marks_item = self.rosterTable.item(row, 3)
                 if not id_item or not marks_item:
                     continue
                 raw_marks = marks_item.text().strip()
@@ -229,6 +247,7 @@ class FacultyController(QMainWindow):
             if self.current_student:
                 self.load_marks(self.current_student[0])
         except Exception as exc:
+            from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Bulk Update Failed", str(exc))
 
     def add_bonus_marks(self) -> None:

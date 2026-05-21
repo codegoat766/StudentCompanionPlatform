@@ -16,11 +16,14 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QGridLayout,
+    QFrame,
 )
 
 from academic import AcademicService
 from app_paths import resource_path
 from admin import AdminService
+from custom_charts import DonutChart, BarChart
 
 
 class AdminController(QMainWindow):
@@ -29,13 +32,12 @@ class AdminController(QMainWindow):
         uic.loadUi(resource_path("ui", "admin.ui"), self)
         self.user = user
         self.on_logout = on_logout
-        self.usernameLabel.setText(f"USERNAME: {user['username']}")
-        self.roleLabel.setText("ROLE: ADMIN")
+        self.usernameLabel.setText(f"Username: {user['username']}")
+        self.roleLabel.setText("Role: Admin")
 
         self.refreshButton.clicked.connect(self.refresh)
-        self.addSubjectButton.clicked.connect(self.add_subject)
-        self.createUserButton.clicked.connect(self.create_user)
-        self.toggleUserButton.clicked.connect(self.toggle_selected_user)
+        self.navSidebar.setCurrentIndex(0)
+        self.navSidebar.currentIndexChanged.connect(self.contentStack.setCurrentIndex)
         self.setup_feature_tabs()
         self.setup_admin_actions()
         self.logoutButton.clicked.connect(self.logout)
@@ -44,17 +46,29 @@ class AdminController(QMainWindow):
         self.refresh()
 
     def setup_feature_tabs(self) -> None:
+        self.navSidebar.clear()
+        self.navSidebar.addItem("Dashboard")
+        self.navSidebar.addItem("Students")
+        self.navSidebar.addItem("Analytics")
+        self.navSidebar.addItem("Leaderboard")
+        self.navSidebar.addItem("Users")
+        self.navSidebar.addItem("Subjects")
+        self.navSidebar.addItem("Audit")
+
         self.dashboardTable = QTableWidget()
-        self.tabs.insertTab(0, self.dashboardTable, "DASHBOARD")
+        self.contentStack.insertWidget(0, self.dashboardTable)
 
         self.studentsTab = QWidget()
         students_layout = QHBoxLayout(self.studentsTab)
         self.departmentInput = QLineEdit()
-        self.departmentInput.setPlaceholderText("DEPARTMENT FILTER")
-        self.searchDepartmentButton = QPushButton("SEARCH")
-        self.addBonusButton = QPushButton("ADD BONUS")
-        self.exportHighButton = QPushButton("EXPORT HIGH CSV")
-        self.mysqlUsersButton = QPushButton("CREATE MYSQL USERS")
+        self.departmentInput.setPlaceholderText("Department filter...")
+        self.searchDepartmentButton = QPushButton("Search")
+        self.addBonusButton = QPushButton("Add Bonus")
+        self.addBonusButton.setObjectName("secondary_btn")
+        self.exportHighButton = QPushButton("Export High CSV")
+        self.exportHighButton.setObjectName("secondary_btn")
+        self.mysqlUsersButton = QPushButton("Create MySQL Users")
+        self.mysqlUsersButton.setObjectName("secondary_btn")
         self.studentsTable = QTableWidget()
         side = QWidget()
         side_layout = QVBoxLayout(side)
@@ -69,12 +83,27 @@ class AdminController(QMainWindow):
         side_layout.addStretch()
         students_layout.addWidget(self.studentsTable, 5)
         students_layout.addWidget(side, 2)
-        self.tabs.addTab(self.studentsTab, "STUDENTS")
+        self.contentStack.insertWidget(1, self.studentsTab)
 
+        self.analyticsTab = QWidget()
+        analytics_layout = QHBoxLayout(self.analyticsTab)
         self.analyticsTable = QTableWidget()
-        self.tabs.addTab(self.analyticsTable, "ANALYTICS")
+        
+        analytics_layout.addWidget(self.analyticsTable)
+        self.contentStack.insertWidget(2, self.analyticsTab)
+        
         self.leaderboardTable = QTableWidget()
-        self.tabs.addTab(self.leaderboardTable, "LEADERBOARD")
+        self.contentStack.insertWidget(3, self.leaderboardTable)
+        
+        # Setup the subjects tab to be less convoluted
+        self.subjectsLayout.removeWidget(self.subjectsList)
+        self.subjectsList.deleteLater()
+        self.subjectsTable = QTableWidget()
+        self.subjectsBarChart = BarChart()
+        self.subjectsLayout.addWidget(self.subjectsTable, 1)
+        self.subjectsLayout.addWidget(self.subjectsBarChart, 1)
+        
+        self.navSidebar.setCurrentIndex(0)
 
         self.searchDepartmentButton.clicked.connect(self.load_students)
         self.departmentInput.returnPressed.connect(self.load_students)
@@ -107,20 +136,45 @@ class AdminController(QMainWindow):
         return [item.text() for item in list_widget.selectedItems()]
 
     def setup_admin_actions(self) -> None:
-        self.editUserButton = QPushButton("EDIT USER")
-        self.deleteUserButton = QPushButton("DELETE USER")
-        self.editSubjectButton = QPushButton("EDIT SUBJECT")
-        self.deleteSubjectButton = QPushButton("DELETE SUBJECT")
+        self.createUserButton = QPushButton("Create User")
+        self.createUserButton.setObjectName("secondary_btn")
+        self.addSubjectButton = QPushButton("Add Subject")
+        self.addSubjectButton.setObjectName("secondary_btn")
+        self.toggleUserButton = QPushButton("Toggle User")
+        self.toggleUserButton.setObjectName("secondary_btn")
+        
+        self.editUserButton = QPushButton("Edit User")
+        self.editUserButton.setObjectName("secondary_btn")
+        self.deleteUserButton = QPushButton("Delete User")
+        self.deleteUserButton.setObjectName("secondary_btn")
+        self.editSubjectButton = QPushButton("Edit Subject")
+        self.editSubjectButton.setObjectName("secondary_btn")
+        self.deleteSubjectButton = QPushButton("Delete Subject")
+        self.deleteSubjectButton.setObjectName("secondary_btn")
 
-        self.rightLayout.insertWidget(4, self.editUserButton)
-        self.rightLayout.insertWidget(5, self.deleteUserButton)
-        self.rightLayout.insertWidget(7, self.editSubjectButton)
-        self.rightLayout.insertWidget(8, self.deleteSubjectButton)
+        # Create a grid layout for action buttons to save vertical space
+        grid = QGridLayout()
+        grid.setSpacing(8)
+        
+        grid.addWidget(self.createUserButton, 0, 0)
+        grid.addWidget(self.addSubjectButton, 0, 1)
+        grid.addWidget(self.toggleUserButton, 1, 0)
+        grid.addWidget(self.editUserButton, 1, 1)
+        grid.addWidget(self.deleteUserButton, 2, 0)
+        grid.addWidget(self.editSubjectButton, 2, 1)
+        grid.addWidget(self.deleteSubjectButton, 3, 0)
+        
+        # Insert the grid layout after the navDivider
+        self.leftLayout.insertLayout(4, grid)
 
         self.editUserButton.clicked.connect(self.edit_selected_user)
         self.deleteUserButton.clicked.connect(self.delete_selected_user)
         self.editSubjectButton.clicked.connect(self.edit_selected_subject)
         self.deleteSubjectButton.clicked.connect(self.delete_selected_subject)
+        
+        self.createUserButton.clicked.connect(self.create_user)
+        self.addSubjectButton.clicked.connect(self.add_subject)
+        self.toggleUserButton.clicked.connect(self.toggle_selected_user)
 
     def refresh(self) -> None:
         try:
@@ -131,7 +185,7 @@ class AdminController(QMainWindow):
             self.load_students()
             self.load_analytics()
             self.load_leaderboard()
-            self.log("ADMIN DATA REFRESHED")
+            self.log("Admin data refreshed.")
         except Exception as exc:
             QMessageBox.critical(self, "Refresh Failed", str(exc))
 
@@ -145,14 +199,16 @@ class AdminController(QMainWindow):
         self.usersTable.setRowCount(len(rows))
         for row_index, row in enumerate(rows):
             username, role, active, created = row
-            values = [username, role, "ACTIVE" if active else "DISABLED", str(created)]
+            values = [username, role, "Active" if active else "Disabled", str(created)]
             for col, value in enumerate(values):
                 self.usersTable.setItem(row_index, col, QTableWidgetItem(str(value)))
         self.usersTable.resizeColumnsToContents()
 
     def load_subjects(self) -> None:
-        self.subjectsList.clear()
-        self.subjectsList.addItems(AdminService.subjects())
+        stats = AcademicService.subject_stats()
+        self.load_table(self.subjectsTable, ["Subject", "Enrolled", "Average", "Max", "Min"], stats)
+        chart_data = [(row[0], row[2]) for row in stats]
+        self.subjectsBarChart.set_data(chart_data)
 
     def load_audit(self) -> None:
         rows = AdminService.audit_log()
@@ -211,11 +267,11 @@ class AdminController(QMainWindow):
             QMessageBox.critical(self, "Add Subject Failed", str(exc))
 
     def selected_subject(self) -> str | None:
-        item = self.subjectsList.currentItem()
-        if not item:
+        row = self.subjectsTable.currentRow()
+        if row < 0:
             QMessageBox.information(self, "Select Subject", "Select a subject first.")
             return None
-        return item.text()
+        return self.subjectsTable.item(row, 0).text()
 
     def edit_selected_subject(self) -> None:
         old_name = self.selected_subject()

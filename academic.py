@@ -467,3 +467,26 @@ class AcademicService:
             writer.writerow(["Rank", "Name", "PRN", "Department", "Average Marks", "GPA (Max 10)", "Grade", "Subjects"])
             writer.writerows(rows)
         return export_path
+
+    @staticmethod
+    def subject_stats() -> list[tuple]:
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT
+                    sub.name,
+                    COUNT(sm.student_id) AS enrolled,
+                    COALESCE(ROUND(AVG(sm.marks), 2), 0) AS avg_marks,
+                    COALESCE(MAX(sm.marks), 0) AS max_marks,
+                    COALESCE(MIN(sm.marks), 0) AS min_marks
+                FROM subjects sub
+                LEFT JOIN student_marks sm ON sm.subject = sub.name
+                GROUP BY sub.name
+                ORDER BY sub.name
+                """
+            )
+            return cur.fetchall()
+        finally:
+            conn.close()

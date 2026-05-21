@@ -1,5 +1,7 @@
 from PyQt6 import uic
-from PyQt6.QtWidgets import QMainWindow, QMessageBox
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QLabel, QMainWindow, QMessageBox
 
 from app_paths import resource_path
 from db import AuthService
@@ -12,6 +14,8 @@ class LoginController(QMainWindow):
         self.dashboard = None
         self.loginButton.clicked.connect(self.login)
         self.passwordInput.returnPressed.connect(self.login)
+        self.identifierInput.returnPressed.connect(self.login)
+
 
     def login(self) -> None:
         identifier = self.identifierInput.text().strip()
@@ -60,7 +64,7 @@ class LoginController(QMainWindow):
         self.passwordInput.clear()
         self.identifierInput.clear()
         self.terminalOutput.clear()
-        self.terminalOutput.setPlainText("SESSION ENDED\nAUTH CHANNEL READY")
+        self.terminalOutput.setPlainText("")
         self.show()
         self.activateWindow()
 

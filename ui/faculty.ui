@@ -2,65 +2,102 @@
 <ui version="4.0">
  <class>FacultyWindow</class>
  <widget class="QMainWindow" name="FacultyWindow">
-  <property name="geometry"><rect><x>0</x><y>0</y><width>1300</width><height>820</height></rect></property>
-  <property name="windowTitle"><string>SPA FACULTY DASHBOARD</string></property>
+  <property name="geometry"><rect><x>0</x><y>0</y><width>1200</width><height>800</height></rect></property>
+  <property name="minimumSize"><size><width>1024</width><height>700</height></size></property>
+  <property name="windowTitle"><string>SPA - Faculty Dashboard</string></property>
   <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet"><string>QWidget#centralwidget { background-color: #FAFAFA; }</string></property>
    <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing"><number>16</number></property>
+    <property name="leftMargin"><number>24</number></property>
+    <property name="topMargin"><number>24</number></property>
+    <property name="rightMargin"><number>24</number></property>
+    <property name="bottomMargin"><number>24</number></property>
     <item>
      <widget class="QFrame" name="headerFrame">
       <layout class="QHBoxLayout" name="headerLayout">
-       <item><widget class="QLabel" name="appTitle"><property name="text"><string>FACULTY MARKS CONSOLE</string></property></widget></item>
-       <item><spacer name="topSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
-       <item><widget class="QPushButton" name="refreshButton"><property name="text"><string>REFRESH</string></property></widget></item>
-       <item><widget class="QPushButton" name="logoutButton"><property name="text"><string>LOGOUT</string></property></widget></item>
+       <property name="leftMargin"><number>24</number></property>
+       <property name="rightMargin"><number>24</number></property>
+       <item><widget class="QLabel" name="appTitle"><property name="text"><string>Faculty Marks Console</string></property></widget></item>
+       <item><spacer name="topSpacer"><property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property><property name="sizeHint"><size><width>40</width><height>20</height></size></property></spacer></item>
+       <item><widget class="QPushButton" name="refreshButton"><property name="text"><string>Refresh</string></property></widget></item>
+       <item><widget class="QPushButton" name="logoutButton"><property name="text"><string>Logout</string></property></widget></item>
       </layout>
      </widget>
     </item>
     <item>
      <layout class="QHBoxLayout" name="contentLayout">
-      <item stretch="3">
+      <property name="spacing"><number>24</number></property>
+      <item stretch="1">
        <widget class="QFrame" name="leftPanel">
         <layout class="QVBoxLayout" name="leftLayout">
+         <property name="spacing"><number>16</number></property>
+         <property name="leftMargin"><number>20</number></property>
+         <property name="topMargin"><number>20</number></property>
+         <property name="rightMargin"><number>20</number></property>
+         <property name="bottomMargin"><number>20</number></property>
+         
          <item>
-          <widget class="QTabWidget" name="tabs">
-           <widget class="QWidget" name="marksTab">
-            <attribute name="title"><string>STUDENT MARKS</string></attribute>
-            <layout class="QVBoxLayout" name="marksLayout">
-             <item><widget class="QTableWidget" name="marksTable"/></item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="rosterTab">
-            <attribute name="title"><string>SUBJECT ROSTER</string></attribute>
-            <layout class="QVBoxLayout" name="rosterLayout">
-             <item><widget class="QTableWidget" name="subjectRosterTable"/></item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="subjectsTab">
-            <attribute name="title"><string>SUBJECTS</string></attribute>
-            <layout class="QVBoxLayout" name="subjectsLayout">
-             <item><widget class="QListWidget" name="subjectsList"/></item>
-            </layout>
-           </widget>
+          <widget class="QFrame" name="profileFrame">
+           <layout class="QVBoxLayout" name="profileLayout">
+            <property name="spacing"><number>8</number></property>
+            <item><widget class="QLabel" name="profileTitle"><property name="text"><string>Faculty Info</string></property></widget></item>
+            <item><widget class="QLabel" name="usernameLabel"><property name="text"><string>Username: faculty</string></property></widget></item>
+            <item><widget class="QLabel" name="roleLabel"><property name="text"><string>Role: Faculty</string></property></widget></item>
+           </layout>
           </widget>
          </item>
-         <item><widget class="QTextEdit" name="terminalOutput"><property name="readOnly"><bool>true</bool></property><property name="plainText"><string>FACULTY NODE ONLINE
-SUBJECT ACCESS IS RESTRICTED</string></property></widget></item>
-         <item><widget class="QFrame" name="commandFrame"><layout class="QHBoxLayout" name="commandLayout"><item><widget class="QLineEdit" name="prnInput"><property name="placeholderText"><string>STUDENT PRN</string></property></widget></item><item><widget class="QPushButton" name="searchButton"><property name="text"><string>SEARCH</string></property></widget></item></layout></widget></item>
+         <item>
+          <widget class="QFrame" name="navDivider"/>
+         </item>
+         <item>
+          <widget class="QComboBox" name="navSidebar"/>
+         </item>
+         <item>
+          <widget class="QFrame" name="navDivider"/>
+         </item>
+         <item>
+          <widget class="QFrame" name="commandFrame">
+           <property name="minimumSize"><size><width>0</width><height>320</height></size></property>
+           <layout class="QVBoxLayout" name="actionLayout">
+            <property name="spacing"><number>20</number></property>
+            <item><widget class="QLabel" name="actionTitle"><property name="text"><string>Quick Action</string></property><property name="styleSheet"><string>font-weight: bold; color: #111827;</string></property></widget></item>
+            <item><widget class="QLabel" name="studentInfoLabel"><property name="text"><string>No student selected</string></property></widget></item>
+            <item><widget class="QComboBox" name="subjectCombo"/></item>
+            <item><widget class="QLineEdit" name="marksInput"><property name="placeholderText"><string>Marks 0-100</string></property></widget></item>
+            <item><widget class="QPushButton" name="saveMarkButton"><property name="text"><string>Save Mark</string></property></widget></item>
+            <item><widget class="QPushButton" name="bulkSaveButton"><property name="text"><string>Save Subject Marks</string></property><property name="objectName"><string>secondary_btn</string></property></widget></item>
+           </layout>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
-      <item stretch="1">
-       <widget class="QFrame" name="rightPanel">
-        <layout class="QVBoxLayout" name="rightLayout">
-         <item><widget class="QFrame" name="profileFrame"><layout class="QVBoxLayout" name="profileLayout"><item><widget class="QLabel" name="profileTitle"><property name="text"><string>FACULTY INFO</string></property></widget></item><item><widget class="QLabel" name="usernameLabel"><property name="text"><string>USERNAME:</string></property></widget></item><item><widget class="QLabel" name="roleLabel"><property name="text"><string>ROLE:</string></property></widget></item><item><widget class="QLabel" name="statusLabel"><property name="text"><string>STATUS: ONLINE</string></property></widget></item></layout></widget></item>
-         <item><widget class="QLabel" name="studentInfoLabel"><property name="text"><string>NO STUDENT LOCKED</string></property></widget></item>
-         <item><widget class="QComboBox" name="subjectCombo"/></item>
-         <item><widget class="QLineEdit" name="marksInput"><property name="placeholderText"><string>MARKS 0-100</string></property></widget></item>
-         <item><widget class="QPushButton" name="saveMarkButton"><property name="text"><string>SAVE MARK</string></property></widget></item>
-         <item><widget class="QPushButton" name="bulkUpdateButton"><property name="text"><string>SAVE SUBJECT MARKS</string></property></widget></item>
-         <item><widget class="QLabel" name="rosterHintLabel"><property name="wordWrap"><bool>true</bool></property><property name="text"><string>Select one subject. The roster shows every student for that subject. Edit each Marks cell, then save.</string></property></widget></item>
-         <item><spacer name="rightSpacer"><property name="orientation"><enum>Qt::Orientation::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>260</height></size></property></spacer></item>
-        </layout>
+      <item stretch="4">
+       <widget class="QStackedWidget" name="contentStack">
+        <widget class="QWidget" name="marksTab">
+         <layout class="QVBoxLayout" name="marksLayout">
+          <item>
+           <widget class="QFrame" name="searchFrame">
+            <layout class="QHBoxLayout" name="searchLayout">
+             <item><widget class="QLineEdit" name="searchPrnInput"><property name="placeholderText"><string>Enter student PRN...</string></property></widget></item>
+             <item><widget class="QPushButton" name="searchButton"><property name="text"><string>Search</string></property></widget></item>
+            </layout>
+           </widget>
+          </item>
+          <item><widget class="QTableWidget" name="marksTable"/></item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="rosterTab">
+         <layout class="QVBoxLayout" name="rosterLayout">
+          <item><widget class="QTableWidget" name="rosterTable"/></item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="subjectsTab">
+         <layout class="QVBoxLayout" name="subjectsLayout">
+          <item><widget class="QListWidget" name="subjectList"/></item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
