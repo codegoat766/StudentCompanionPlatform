@@ -4,7 +4,7 @@ setlocal
 cd /d "%~dp0"
 
 echo [1/3] Building executable with PyInstaller...
-py -m PyInstaller --clean --noconfirm PRN_spa.spec
+python -m PyInstaller --clean --noconfirm PRN_spa.spec
 if errorlevel 1 (
   echo Build failed.
   exit /b 1
